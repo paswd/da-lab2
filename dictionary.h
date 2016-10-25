@@ -4,20 +4,8 @@
 typedef unsigned long long TNumber;
 
 //Universal functions block
-TNumber min(TNumber num1, TNumber num2) {
-	if (num1 < num2) {
-		return num1;
-	} else {
-		return num2;
-	}
-}
-TNumber max(TNumber num1, TNumber num2) {
-	if (num1 > num2) {
-		return num1;
-	} else {
-		return num2;
-	}
-}
+TNumber min(TNumber num1, TNumber num2);
+TNumber max(TNumber num1, TNumber num2);
 
 //Content blocks
 class TNote {
@@ -31,7 +19,7 @@ public:
 class TBTreeNode {
 public:
 	//Fields
-	bool IsLeaf;
+	//bool IsLeaf;
 	TNote *Elements;
 	size_t ElementsNum;
 
@@ -41,8 +29,11 @@ public:
 	TBTreeNode *Parent;
 
 	//Methods
-	TBTreeNode(TNote value, size_t size, TBTreeNode *parent);
+	TBTreeNode(TBTreeNode *parent);
 	~TBTreeNode();
+
+	//void InsertElementToArray(TNode element);
+	size_t GetInsertPosition(TBTreeNode *child);
 };
 
 class TBTree {
