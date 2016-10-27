@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdlib>
-#include "dictionary.h"
+#include "btree.h"
 
 using namespace std;
 
@@ -33,6 +33,19 @@ int main() {
 	res.Key[4] = '\0';
 	tree->Push(res);
 	tree->Print();
+
+	TNote del;
+	del.Num = 99;
+	del.Key[0] = 'i';
+	del.Key[1] = 'i';
+	del.Key[2] = 'i';
+	del.Key[3] = 'i';
+	del.Key[4] = '\0';
+	cout << "Input: " << del.Key << endl;
+	TNote p_res = tree->Pop(del.Key);
+	cout << "Popped value: " << p_res.Key << endl;
+	tree->Print();
+
 
 	/*cout << "Uniting... ";
 	tree->Unite(tree->Root, 2);

@@ -3,14 +3,17 @@ COMPILLER=g++
 
 all: start
 
-start: dictionary.o main.o
-	$(COMPILLER) $(FLAGS) -o da-lab2 dictionary.o main.o
+start: btree.o main.o
+	$(COMPILLER) $(FLAGS) -o da-lab2 btree.o main.o
 
 main.o: main.cpp
 	$(COMPILLER) -c $(FLAGS) main.cpp
 
 dictionary.o: dictionary.cpp
 	$(COMPILLER) -c $(FLAGS) dictionary.cpp
+
+btree.o: btree.cpp
+	$(COMPILLER) -c $(FLAGS) btree.cpp
 
 clear:
 	-rm -f *.o *.gch da-lab2
