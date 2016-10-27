@@ -84,7 +84,7 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 	//cout << "Insert::Point1" << endl;
 	if (!this->IsLeaf) {
 		cout << "Node is not a leaf" << endl;
-		this->Print(0);
+		//this->Print(0);
 		return;
 	}
 	//cout << "Insert::Point2" << endl;
@@ -171,7 +171,7 @@ TBTree::~TBTree() {
 	delete this->Root;
 }
 
-void TBTree::Split(TBTreeNode *node) {
+size_t TBTree::Split(TBTreeNode *node) {
 	//Separate arrays
 	size_t middle = node->ElementsNum / 2;
 	TNote middle_element = node->Elements[middle];
@@ -279,6 +279,8 @@ void TBTree::Split(TBTreeNode *node) {
 	if (node->Parent->ElementsNum > this->FactorT * 2 - 1) {
 		this->Split(node->Parent);
 	}
+
+	return insert_pos_element;
 }
 
 bool TBTree::Search(char *key, TBTreeNode **node_res) {
@@ -338,12 +340,15 @@ void TBTree::Push(TNote element) {
 		this->Root = CurrentNode;
 	}
 
+	if (CurrentNode->ElementsNum >= this->FactorT * 2 - 1) {
+		size_t insert_pos = this->Split(CurrentNode);
+		if (StringComparison(element.key, CurrentNode->Parent->Elements[insert_pos].key) != -1) {
+			CurrentNode = CurrentNode->Parent->Children[insert_pos + 1];
+		}
+	}
+
 	CurrentNode->InsertElementToLeaf(element);
 	//cout << "Push::Point" << endl;
-
-	if (CurrentNode->ElementsNum >= this->FactorT * 2 - 1) {
-		this->Split(CurrentNode);
-	}
 }
 
 /*TNote TBTree::Pop(TNumber key) {

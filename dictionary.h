@@ -47,7 +47,7 @@ private:
 	TBTreeNode *Root;
 	size_t FactorT;
 
-	void Split(TBTreeNode *node);
+	size_t Split(TBTreeNode *node);
 
 public:
 	TBTree(size_t factor);
