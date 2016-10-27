@@ -12,8 +12,8 @@ char ToLowerCase(char letter);
 //Content blocks
 class TNote {
 public:
-	char key[257];
-	TNumber num;
+	char Key[257];
+	TNumber Num;
 };
 
 
@@ -41,6 +41,12 @@ public:
 
 	//TBTreeNode *Search(char *key);
 };
+class TSearchRes {
+public:
+	bool IsFound;
+	TBTreeNode *Node;
+	size_t Pos;
+};
 
 class TBTree {
 private:
@@ -53,7 +59,7 @@ public:
 	TBTree(size_t factor);
 	~TBTree();
 
-	bool Search(char *key, TBTreeNode **node_res);
+	TSearchRes Search(char *key);
 	void Push(TNote element);
 	TNote Pop(TNumber key);
 	void Print();

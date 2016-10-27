@@ -80,7 +80,7 @@ TBTreeNode::~TBTreeNode() {
 }
 
 void TBTreeNode::InsertElementToLeaf(TNote element) {
-	//cout << "Insert::Element " << element.key << ":" << element.num << endl;
+	//cout << "Insert::Element " << element.Key << ":" << element.Num << endl;
 	//cout << "Insert::Point1" << endl;
 	if (!this->IsLeaf) {
 		cout << "Node is not a leaf" << endl;
@@ -101,7 +101,7 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 		size_t middle = tmp_size / 2 + left;
 		//cout << "Insert::InPoint1" << endl;
 		//if (element.num < this->Elements[middle]) {
-		if (StringComparison(element.key, this->Elements[middle].key) == -1) {
+		if (StringComparison(element.Key, this->Elements[middle].Key) == -1) {
 			right = middle - 1;
 		} else {
 			left = middle;
@@ -111,7 +111,7 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 	//Insert element
 	size_t insert_pos = left;
 	if (this->ElementsNum != 0) {
-		int cmp = StringComparison(element.key, this->Elements[insert_pos].key);
+		int cmp = StringComparison(element.Key, this->Elements[insert_pos].Key);
 		if (insert_pos != 0 || cmp != -1) {
 			insert_pos++;
 		}
@@ -148,7 +148,7 @@ void TBTreeNode::Print(size_t lvl) {
 		for (size_t j = 0; j < lvl; j++) {
 			cout << "  ";
 		}
-		cout << this->Elements[i].key << ":" << this->Elements[i].num << endl;
+		cout << this->Elements[i].Key << ":" << this->Elements[i].Num << endl;
 	}
 	cout << "----------" << endl;
 	for (size_t i = 0; i < this->ChildrenNum; i++) {
@@ -283,19 +283,27 @@ size_t TBTree::Split(TBTreeNode *node) {
 	return insert_pos_element;
 }
 
-bool TBTree::Search(char *key, TBTreeNode **node_res) {
+TSearchRes TBTree::Search(char *key) {
+	TSearchRes result;
 	TBTreeNode *node = this->Root;
-	*node_res = node;
+	result.Node = node;
+	result.Pos = 0;
+	result.IsFound = false;
+	//*node_res = node;
 
 	while (node != NULL) {
 		//cout << "Search::Point1" << endl;
 		bool is_maximal = true;
 		for (size_t i = 0; i < node->ElementsNum; i++) {
-			int cmp = StringComparison(key, node->Elements[i].key);
+			int cmp = StringComparison(key, node->Elements[i].Key);
 			//cout << "Str::Comp " << cmp << endl;
 			if (cmp == 0) {
 				//cout << "Strings are equal" << endl;
-				return true;
+				//*pos = i;
+				result.Pos = i;
+				result.IsFound = true;
+				return result;
+				//return true;
 			}
 			
 			if (cmp < 0) {
@@ -308,29 +316,36 @@ bool TBTree::Search(char *key, TBTreeNode **node_res) {
 		}
 		//cout << "Search::Point2" << endl;
 		if (node->IsLeaf) {
-			*node_res = node;
-			return false;
+			//*node_res = node;
+			result.Node = node;
+			result.IsFound = false;
+			//return false;
+			return result;
 		}
 		if (is_maximal) {
 			node = node->Children[node->ChildrenNum - 1];
 		}
 		//cout << "Search::Point3" << endl;
 		if (node != NULL) {
-			*node_res = node;
+			//*node_res = node;
+			result.Node = node;
 			//cout << "Node::true" << endl;
 		}
 	}
-	return false;
+	result.IsFound = false;
+	//return false;
+	return result;
 }
 
 void TBTree::Push(TNote element) {
-	cout << "Push::Element " << element.key << ":" << element.num << endl;
+	cout << "Push::Element " << element.Key << ":" << element.Num << endl;
 	//cout << "In" << endl;
-	TBTreeNode *CurrentNode = NULL;
-	bool search_res = this->Search(element.key, &CurrentNode);
+	
+	TSearchRes search_res = this->Search(element.Key);
+	TBTreeNode *CurrentNode = search_res.Node;
 	//cout << "Push::Searched" << endl;
 
-	if (search_res) {
+	if (search_res.IsFound) {
 		cout << "Exist" << endl;
 		return;
 	}
@@ -342,7 +357,7 @@ void TBTree::Push(TNote element) {
 
 	if (CurrentNode->ElementsNum >= this->FactorT * 2 - 1) {
 		size_t insert_pos = this->Split(CurrentNode);
-		if (StringComparison(element.key, CurrentNode->Parent->Elements[insert_pos].key) != -1) {
+		if (StringComparison(element.Key, CurrentNode->Parent->Elements[insert_pos].Key) != -1) {
 			CurrentNode = CurrentNode->Parent->Children[insert_pos + 1];
 		}
 	}

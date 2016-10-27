@@ -8,13 +8,13 @@ int main() {
 	const size_t size = 26;
 	TNote arr[size];
 	for (int i = 0; i < size; i++) {
-		//int j = size - i - 1;
-		arr[i].num = (TNumber) i;
-		arr[i].key[0] = 'a' + i;
-		arr[i].key[1] = 'a' + i;
-		arr[i].key[2] = 'a' + i;
-		arr[i].key[3] = 'a' + i;
-		arr[i].key[4] = '\0';
+		int j = size - i - 1;
+		arr[i].Num = (TNumber) i;
+		arr[i].Key[0] = 'a' + i;
+		arr[i].Key[1] = 'a' + i;
+		arr[i].Key[2] = 'a' + i;
+		arr[i].Key[3] = 'a' + i;
+		arr[i].Key[4] = '\0';
 	}
 
 	TBTree *tree = new TBTree(4);
@@ -25,12 +25,12 @@ int main() {
 		cout << endl;
 	}
 	TNote res;
-	res.num = 102;
-	res.key[0] = 'd';
-	res.key[1] = 'f';
-	res.key[2] = 'g';
-	res.key[3] = 'a';
-	res.key[4] = '\0';
+	res.Num = 102;
+	res.Key[0] = 'd';
+	res.Key[1] = 'f';
+	res.Key[2] = 'g';
+	res.Key[3] = 'a';
+	res.Key[4] = '\0';
 	tree->Push(res);
 	tree->Print();
 	delete tree;
