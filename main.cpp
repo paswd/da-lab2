@@ -8,6 +8,7 @@ int main() {
 	const size_t size = 26;
 	TNote arr[size];
 	for (int i = 0; i < size; i++) {
+		//int j = size - i - 1;
 		arr[i].num = (TNumber) i;
 		arr[i].key[0] = 'a' + i;
 		arr[i].key[1] = 'a' + i;
@@ -25,8 +26,8 @@ int main() {
 	}
 	TNote res;
 	res.num = 102;
-	res.key[0] = 'f';
-	res.key[1] = 'd';
+	res.key[0] = 'd';
+	res.key[1] = 'f';
 	res.key[2] = 'g';
 	res.key[3] = 'a';
 	res.key[4] = '\0';

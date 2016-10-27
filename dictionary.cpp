@@ -111,13 +111,19 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 	//Insert element
 	size_t insert_pos = left;
 	if (this->ElementsNum != 0) {
-		insert_pos++;
+		int cmp = StringComparison(element.key, this->Elements[insert_pos].key);
+		if (insert_pos != 0 || cmp != -1) {
+			insert_pos++;
+		}
 	}
 
 	TNote *new_elements = new TNote[this->ElementsNum + 1];
 	size_t pos = 0;
 	//cout << "Insert::Point5" << endl;
 	for (size_t i = 0; i < this->ElementsNum; i++) {
+		if (i == insert_pos) {
+			pos++;
+		}
 		new_elements[pos] = this->Elements[i];
 		pos++;
 	}
@@ -284,17 +290,23 @@ bool TBTree::Search(char *key, TBTreeNode **node_res) {
 		bool is_maximal = true;
 		for (size_t i = 0; i < node->ElementsNum; i++) {
 			int cmp = StringComparison(key, node->Elements[i].key);
+			//cout << "Str::Comp " << cmp << endl;
 			if (cmp == 0) {
+				//cout << "Strings are equal" << endl;
 				return true;
 			}
+			
 			if (cmp < 0) {
 				is_maximal = false;
-				node = node->Children[i];
+				if (!node->IsLeaf) {
+					node = node->Children[i];
+				}
 				break;
 			}
 		}
 		//cout << "Search::Point2" << endl;
 		if (node->IsLeaf) {
+			*node_res = node;
 			return false;
 		}
 		if (is_maximal) {
@@ -303,6 +315,7 @@ bool TBTree::Search(char *key, TBTreeNode **node_res) {
 		//cout << "Search::Point3" << endl;
 		if (node != NULL) {
 			*node_res = node;
+			//cout << "Node::true" << endl;
 		}
 	}
 	return false;
