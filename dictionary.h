@@ -54,6 +54,9 @@ private:
 	size_t FactorT;
 
 	size_t Split(TBTreeNode *node);
+	void Unite(TBTreeNode *node, size_t pos);
+
+	void TreeDestroy(TBTreeNode *node);
 
 public:
 	TBTree(size_t factor);
@@ -61,7 +64,7 @@ public:
 
 	TSearchRes Search(char *key);
 	void Push(TNote element);
-	TNote Pop(TNumber key);
+	TNote Pop(char *key);
 	void Print();
 };
 

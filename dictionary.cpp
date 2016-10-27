@@ -73,9 +73,9 @@ TBTreeNode::TBTreeNode(TBTreeNode *parent, bool is_leaf) {
 
 TBTreeNode::~TBTreeNode() {
 	delete [] this->Elements;
-	for (size_t i = 0; i < this->ChildrenNum; i++) {
+	/*for (size_t i = 0; i < this->ChildrenNum; i++) {
 		delete this->Children[i];
-	}
+	}*/
 	delete [] this->Children;
 }
 
@@ -168,7 +168,23 @@ TBTree::TBTree(size_t factor) {
 }
 
 TBTree::~TBTree() {
-	delete this->Root;
+	//delete this->Root;
+	this->TreeDestroy(this->Root);
+}
+
+void TBTree::TreeDestroy(TBTreeNode *node) {
+	//cout << "TreeDestroy::In" << endl;
+	//delete [] node->Elements;
+	//cout << "TreeDestroy::Point1" << endl;
+	for (size_t i = 0; i < node->ChildrenNum; i++) {
+		//delete this->Children[i];
+		this->TreeDestroy(node->Children[i]);
+	}
+	//cout << "TreeDestroy::Point2" << endl;
+	//delete [] node->Children;
+	//cout << "TreeDestroy::Point3" << endl;
+	delete node;
+	//cout << "TreeDestroy::Out" << endl;
 }
 
 size_t TBTree::Split(TBTreeNode *node) {
@@ -283,6 +299,89 @@ size_t TBTree::Split(TBTreeNode *node) {
 	return insert_pos_element;
 }
 
+void TBTree::Unite(TBTreeNode *node, size_t pos) {
+	if (node->IsLeaf) {
+		cout << "Unite error: Node is leaf" << endl;
+		return;
+	}
+	if (pos >= node->ElementsNum) {
+		cout << "Unite error: Unable position" << endl;
+		return;
+	}
+
+	//Creating united arrays
+	size_t new_arr_elements_len = 1;
+	new_arr_elements_len += node->Children[pos]->ElementsNum;
+	new_arr_elements_len += node->Children[pos + 1]->ElementsNum;
+	TNote *new_arr_elements = new TNote[new_arr_elements_len];
+	for (size_t i = 0; i < node->Children[pos]->ElementsNum; i++) {
+		new_arr_elements[i] = node->Children[pos]->Elements[i];
+	}
+	new_arr_elements[node->Children[pos]->ElementsNum] = node->Elements[pos];
+	for (size_t i = 0; i < node->Children[pos + 1]->ElementsNum; i++) {
+		size_t tmp_pos = i + node->Children[pos]->ElementsNum + 1;
+		new_arr_elements[tmp_pos] = node->Children[pos + 1]->Elements[i];
+	}
+
+	size_t new_arr_children_len = 0;
+	TBTreeNode **new_arr_children = NULL;
+	if (!node->Children[pos]->IsLeaf) {
+		new_arr_children_len = node->Children[pos]->ChildrenNum;
+		new_arr_children_len += node->Children[pos + 1]->ChildrenNum;
+		new_arr_children = new TBTreeNode *[new_arr_children_len];
+		for (size_t i = 0; i < new_arr_children_len; i++) {
+			if (i < node->Children[pos]->ChildrenNum) {
+				new_arr_children[i] = node->Children[pos]->Children[i];
+			} else {
+				size_t tmp_pos = node->Children[pos]->ChildrenNum;
+				new_arr_children[i] = node->Children[pos + 1]->Children[i - tmp_pos];
+			}
+		}
+	}
+
+	//Deleting second branch and creating united child in first branch
+	delete node->Children[pos + 1];
+	delete [] node->Children[pos]->Elements;
+	delete [] node->Children[pos]->Children;
+
+	node->Children[pos]->Elements = new_arr_elements;
+	node->Children[pos]->ElementsNum = new_arr_elements_len;
+	node->Children[pos]->Children = new_arr_children;
+	node->Children[pos]->ChildrenNum = new_arr_children_len;
+
+	//Creating new parent arrays
+	size_t new_parent_arr_elements_len = node->ElementsNum - 1;
+	size_t new_parent_arr_children_len = node->ChildrenNum - 1;
+	TNote *new_parent_arr_elements = new TNote[new_parent_arr_elements_len];
+	TBTreeNode **new_parent_arr_children = new TBTreeNode *[new_parent_arr_children_len];
+
+	size_t tmp_pos = 0;
+	for (size_t i = 0; i < new_parent_arr_elements_len; i++) {
+		if (tmp_pos == pos) {
+			tmp_pos++;
+		}
+		new_parent_arr_elements[i] = node->Elements[tmp_pos];
+		tmp_pos++;
+	}
+
+	tmp_pos = 0;
+	for (size_t i = 0; i < new_parent_arr_children_len; i++) {
+		if (tmp_pos == pos + 1) {
+			tmp_pos++;
+		}
+		new_parent_arr_children[i] = node->Children[tmp_pos];
+		tmp_pos++;
+	}
+
+	//Refreshing arrays
+	delete [] node->Elements;
+	delete [] node->Children;
+	node->Elements = new_parent_arr_elements;
+	node->ElementsNum = new_parent_arr_elements_len;
+	node->Children = new_parent_arr_children;
+	node->ChildrenNum = new_parent_arr_children_len;
+}
+
 TSearchRes TBTree::Search(char *key) {
 	TSearchRes result;
 	TBTreeNode *node = this->Root;
@@ -366,8 +465,8 @@ void TBTree::Push(TNote element) {
 	//cout << "Push::Point" << endl;
 }
 
-/*TNote TBTree::Pop(TNumber key) {
-	
+/*TNote TBTree::Pop(char *key) {
+	r
 }*/
 
 void TBTree::Print() {
@@ -375,3 +474,5 @@ void TBTree::Print() {
 	this->Root->Print(0);
 	cout << "Finish printing" << endl;
 }
+
+
