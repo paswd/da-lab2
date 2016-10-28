@@ -41,20 +41,18 @@ public:
 	size_t GetInsertPosition(TBTreeNode *child);
 	void Print(size_t lvl);
 	void PrintElements();
-	//void SetRoot();
-
-	//TBTreeNode *Search(char *key);
 };
 class TSearchRes {
 public:
+	TNote Element;
 	bool IsFound;
 	TBTreeNode *Node;
 	size_t Pos;
 };
 
 class TBTree {
-//private:
-public:
+private:
+//public:
 	TBTreeNode *Root;
 	size_t FactorT;
 
@@ -67,7 +65,7 @@ public:
 
 	void TreeDestroy(TBTreeNode *node);
 
-//public:
+public:
 	TBTree(size_t factor);
 	~TBTree();
 
@@ -76,8 +74,5 @@ public:
 	TNote Pop(char *key);
 	void Print();
 };
-
-
-//Dictionary block
 
 #endif
