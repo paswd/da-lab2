@@ -30,13 +30,18 @@ int main() {
 	}
 	TNote res;
 	res.Num = 102;
-	res.Key[0] = 'u';
-	res.Key[1] = 'u';
-	res.Key[2] = 'u';
-	res.Key[3] = 'u';
+	res.Key[0] = 'c';
+	res.Key[1] = 'c';
+	res.Key[2] = 'c';
+	res.Key[3] = 'c';
 	res.Key[4] = '\0';
+	/*cout << "Search... ";
 	TSearchRes search = tree->Search(res.Key);
+	cout << "OK" << endl;
+	cout << "Uniting... ";
 	tree->Unite(search.Node, search.Pos);
+	cout << "OK" << endl;*/
+	tree->Pop(res.Key);
 	tree->Print();
 	//cout << "<<SPLITTING>>" << endl;
 	//search.Node->PrintElements();

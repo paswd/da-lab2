@@ -62,8 +62,8 @@ public:
 	void Unite(TBTreeNode *node, size_t pos);
 	void Balance(TBTreeNode *CurrentNode, size_t pos);
 
-	//void RotateLeft(TBTreeNode *CurrentNode, size_t pos);
-	//void RotateRight(TBTreeNode * CurrentNode, size_t pos);
+	void RotateLeft(TBTreeNode *CurrentNode);
+	void RotateRight(TBTreeNode * CurrentNode);
 
 	void TreeDestroy(TBTreeNode *node);
 
