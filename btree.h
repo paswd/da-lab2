@@ -40,6 +40,7 @@ public:
 	void DeleteElementFromLeaf(size_t pos);
 	size_t GetInsertPosition(TBTreeNode *child);
 	void Print(size_t lvl);
+	void PrintElements();
 	//void SetRoot();
 
 	//TBTreeNode *Search(char *key);
@@ -52,16 +53,21 @@ public:
 };
 
 class TBTree {
-private:
+//private:
+public:
 	TBTreeNode *Root;
 	size_t FactorT;
 
 	size_t Split(TBTreeNode *node);
 	void Unite(TBTreeNode *node, size_t pos);
+	void Balance(TBTreeNode *CurrentNode, size_t pos);
+
+	//void RotateLeft(TBTreeNode *CurrentNode, size_t pos);
+	//void RotateRight(TBTreeNode * CurrentNode, size_t pos);
 
 	void TreeDestroy(TBTreeNode *node);
 
-public:
+//public:
 	TBTree(size_t factor);
 	~TBTree();
 

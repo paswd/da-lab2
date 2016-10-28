@@ -157,6 +157,14 @@ void TBTreeNode::Print(size_t lvl) {
 	}
 }
 
+void TBTreeNode::PrintElements() {
+	cout << "NodeContent::";
+	for (size_t i = 0; i < this->ElementsNum; i++) {
+		cout << this->Elements[i].Key << " ";
+	}
+	cout << endl;
+}
+
 
 
 TBTree::TBTree(size_t factor) {
@@ -176,6 +184,8 @@ void TBTree::TreeDestroy(TBTreeNode *node) {
 }
 
 size_t TBTree::Split(TBTreeNode *node) {
+	//if (node->ElementsNum )
+
 	//Separate arrays
 	size_t middle = node->ElementsNum / 2;
 	TNote middle_element = node->Elements[middle];
@@ -226,6 +236,10 @@ size_t TBTree::Split(TBTreeNode *node) {
 		this->Root = node->Parent;
 	}
 
+	if (node->Parent->ElementsNum >= this->FactorT * 2 - 1) {
+		this->Split(node->Parent);
+	}
+
 	size_t insert_pos_element = node->Parent->GetInsertPosition(node);
 	size_t insert_pos_children = insert_pos_element + 1;
 
@@ -255,8 +269,8 @@ size_t TBTree::Split(TBTreeNode *node) {
 	node->Parent->ChildrenNum++;
 	delete [] node->Parent->Children;
 	node->Parent->Children = parent_children_new;
-	
 
+	
 	//Inserting
 	node->Parent->Elements[insert_pos_element] = middle_element;
 
@@ -266,8 +280,12 @@ size_t TBTree::Split(TBTreeNode *node) {
 	node->Parent->Children[insert_pos_children]->Elements = arr2_elements;
 	node->Parent->Children[insert_pos_children]->ElementsNum = arr2_elements_len;
 	if (!node->IsLeaf) {
-		node->Parent->Children[insert_pos_children]->Children = arr2_children;
-		node->Parent->Children[insert_pos_children]->ChildrenNum = arr2_children_len;
+		TBTreeNode *ths_tmp = node->Parent->Children[insert_pos_children];
+		ths_tmp->Children = arr2_children;
+		ths_tmp->ChildrenNum = arr2_children_len;
+		for (size_t i = 0; i < ths_tmp->ChildrenNum; i++) {
+			ths_tmp->Children[i]->Parent = ths_tmp;
+		}
 	}
 
 	delete [] node->Elements;
@@ -280,9 +298,10 @@ size_t TBTree::Split(TBTreeNode *node) {
 		node->ChildrenNum = arr1_children_len;
 	}
 
-	if (node->Parent->ElementsNum > this->FactorT * 2 - 1) {
+	/*if (node->Parent->ElementsNum > this->FactorT * 2 - 1) {
 		this->Split(node->Parent);
-	}
+	}*/
+	cout << "ResultTree::end" << endl;
 
 	return insert_pos_element;
 }
@@ -296,6 +315,8 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 		cout << "Unite error: Unable position" << endl;
 		return;
 	}
+
+
 
 	//Creating united arrays
 	size_t new_arr_elements_len = 1;
@@ -370,6 +391,157 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 	node->ElementsNum = new_parent_arr_elements_len;
 	node->Children = new_parent_arr_children;
 	node->ChildrenNum = new_parent_arr_children_len;
+
+	/*if (node->ElementsNum == 0) {
+		this->Root = node->Children[0];
+		this->Root->Parent = NULL;
+		delete node;
+	}*/
+
+	for (size_t i = 0; i < node->Children[pos]->ChildrenNum; i++) {
+		node->Children[pos]->Children[i]->Parent = node->Children[pos];
+	}
+
+	/*if (node->ElementsNum < this->FactorT - 1 && node->Parent != NULL) {
+		for (size_t i = 0; i < node->Parent->ChildrenNum; i++) {
+			if (node != node->Parent->Children[i]) {
+				continue;
+			}
+			bool is_left_larger = false;
+			bool is_right_larger = false;
+
+
+		}
+	}*/
+	tmp_pos = 0;
+	for (size_t i = 0; i < node->Parent->ChildrenNum; i++) {
+		if (node == node->Parent->Children[i]) {
+			tmp_pos = i;
+			break;
+		}
+	}
+	this->Balance(node, tmp_pos);
+}
+
+void TBTree::Balance(TBTreeNode *CurrentNode, size_t pos) {
+	if (CurrentNode == NULL) {
+		return;
+	}
+	if (CurrentNode->ElementsNum >= this->FactorT - 1 || CurrentNode->Parent == NULL) {
+		return;
+	}
+	if (CurrentNode->Parent->ElementsNum == 0 && CurrentNode->Parent->Parent == NULL) {
+		delete this->Root;
+		this->Root = CurrentNode;
+		this->Root->Parent = NULL;
+		return;
+	}
+
+	bool is_left_larger = false;
+	bool is_right_larger = false;
+
+	if (pos > 0) {
+		if (CurrentNode->Parent->Children[pos - 1]->ElementsNum > this->FactorT - 1) {
+			is_left_larger = true;
+		}
+	}
+	if (pos < CurrentNode->Parent->ChildrenNum - 1) {
+		if (CurrentNode->Parent->Children[pos + 1]->ElementsNum > this->FactorT - 1) {
+			is_right_larger = true;
+		}
+	}
+
+
+	if (!is_left_larger && !is_right_larger) {
+		CurrentNode->DeleteElementFromLeaf(pos);
+		if (pos > 0) {
+			this->Unite(CurrentNode->Parent, pos - 1);
+		} else {
+			this->Unite(CurrentNode->Parent, pos);
+		}
+		return;
+	}
+	if (is_left_larger) {
+		size_t left_last = CurrentNode->Parent->Children[pos - 1]->ElementsNum - 1;
+		TNote k1 = CurrentNode->Parent->Children[pos - 1]->Elements[left_last];
+		TNote k2 = CurrentNode->Parent->Elements[pos - 1];
+		CurrentNode->Parent->Children[pos - 1]->DeleteElementFromLeaf(left_last);
+		CurrentNode->Parent->Elements[pos - 1] = k1;
+		/*for (size_t i = pos; i > 0; i--) {
+			CurrentNode->Elements[i] = CurrentNode->Elements[i - 1];
+		}
+		CurrentNode->Elements[0] = k2;*/
+		TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
+		//
+		for (size_t i = 0; i < CurrentNode->ElementsNum; i++) {
+			new_arr_elements[i + 1] = CurrentNode->Elements[i];
+		}
+		new_arr_elements[0] = k2;
+		delete [] CurrentNode->Elements;
+		CurrentNode->Elements = new_arr_elements;
+		CurrentNode->ElementsNum++;
+
+		TBTreeNode *t_left = CurrentNode->Parent->Children[pos - 1];
+		TBTreeNode *tmp = t_left->Children[left_last + 1];
+		TBTreeNode **new_arr_children = new TBTreeNode *[t_left->ChildrenNum - 1];
+
+		for (size_t i = 0; i < t_left->ChildrenNum - 1; i++) {
+			new_arr_children[i] = t_left->Children[i];
+		}
+		delete [] t_left->Children;
+		t_left->Children = new_arr_children;
+		t_left->ChildrenNum--;
+
+		new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
+		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
+			new_arr_children[i + 1] = CurrentNode->Children[i];
+		}
+		new_arr_children[0] = tmp;
+		delete [] CurrentNode->Children;
+		CurrentNode->Children = new_arr_children;
+		CurrentNode->ChildrenNum++;
+	} else {
+		size_t right_first = 0;
+		TNote k1 = CurrentNode->Parent->Children[pos + 1]->Elements[right_first];
+		TNote k2 = CurrentNode->Parent->Elements[pos];
+		CurrentNode->Parent->Children[pos + 1]->DeleteElementFromLeaf(right_first);
+		CurrentNode->Parent->Elements[pos] = k1;
+		//
+		TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
+		//
+		/*for (size_t i = pos; i < CurrentNode->ElementsNum - 1; i++) {
+			CurrentNode->Elements[i] = CurrentNode->Elements[i + 1];
+		}*/
+		for (size_t i = 0; i < CurrentNode->ElementsNum; i++) {
+			new_arr_elements[i] = CurrentNode->Elements[i];
+		}
+		new_arr_elements[CurrentNode->ElementsNum] = k2;
+		delete [] CurrentNode->Elements;
+		CurrentNode->Elements = new_arr_elements;
+		CurrentNode->ElementsNum++;
+		//CurrentNode->Elements[CurrentNode->ElementsNum - 1] = k2;
+
+
+		TBTreeNode *t_right = CurrentNode->Parent->Children[pos + 1];
+		TBTreeNode *tmp = t_right->Children[right_first];
+		TBTreeNode **new_arr_children = new TBTreeNode *[t_right->ChildrenNum - 1];
+
+		for (size_t i = 1; i < t_right->ChildrenNum; i++) {
+			new_arr_children[i - 1] = t_right->Children[i];
+		}
+		delete [] t_right->Children;
+		t_right->Children = new_arr_children;
+		t_right->ChildrenNum--;
+
+		new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
+		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
+			new_arr_children[i] = CurrentNode->Children[i];
+		}
+		new_arr_children[CurrentNode->ChildrenNum] = tmp;
+		delete [] CurrentNode->Children;
+		CurrentNode->Children = new_arr_children;
+		CurrentNode->ChildrenNum++;
+	}
 }
 
 TSearchRes TBTree::Search(char *key) {
@@ -433,6 +605,7 @@ void TBTree::Push(TNote element) {
 	}
 
 	if (CurrentNode->ElementsNum >= this->FactorT * 2 - 1) {
+		//CurrentNode->PrintElements(); 
 		size_t insert_pos = this->Split(CurrentNode);
 		if (StringComparison(element.Key, CurrentNode->Parent->Elements[insert_pos].Key) != -1) {
 			CurrentNode = CurrentNode->Parent->Children[insert_pos + 1];
@@ -478,7 +651,8 @@ TNote TBTree::Pop(char *key) {
 			}
 		}
 
-		bool is_left_larger = false;
+		this->Balance(CurrentNode, parent_pos);
+		/*bool is_left_larger = false;
 		bool is_right_larger = false;
 
 		if (parent_pos > 0) {
@@ -521,14 +695,14 @@ TNote TBTree::Pop(char *key) {
 				CurrentNode->Elements[i] = CurrentNode->Elements[i + 1];
 			}
 			CurrentNode->Elements[CurrentNode->ElementsNum - 1] = k2;
-		}
+		}*/
 		return res;
 
-	} /*else {
+	}/* else {
+		d
 
+		return res;
 	}*/
-
-
 	return res;
 }
 
