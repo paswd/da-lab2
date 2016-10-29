@@ -12,12 +12,23 @@ int main() {
 
 	while (!cin.eof()) {
 		cin >> in;
+		if (cin.eof()) {
+			break;
+		}
 		char operation = in[0];
 		bool out_log = false;
 
 		TNote in_note;
-		char key[257];
+		char str[257];
 		TSearchRes search_res;
+		char file_path[512];
+
+		char save[] = "Save";
+		char load[] = "Load";
+
+		if (operation == '\n') {
+			continue;
+		}
 
 		switch (operation) {
 			case '+':
@@ -27,16 +38,34 @@ int main() {
 				break;
 			case '-':
 				//char *key;
-				cin >> key;
+				cin >> str;
 				/*for (size_t i = 0; key[i] != '\0' && i < 255; i++) {
 					cout << i << endl;
 				}*/
-				tree->Pop(key);
+				tree->Pop(str);
 				break;
 			case '!':
 				/*char *param;
 				char *path;
 				cin >> param;*/
+				cin >> str;
+				cin >> file_path;
+				if (StringComparison(str, save) == 0) {
+					tree->Save(file_path);
+					break;
+				}
+				if (StringComparison(str, load) == 0) {
+					tree->Load(file_path);
+					break;
+				}
+				/*if (str == "Load" || str == "load" || str == "LOAD") {
+					tree->Load(file_path);
+					break;
+				}
+				if (str == "Save" || str == "save" || str == "SAVE") {
+					tree->Save(file_path);
+					break;
+				}*/
 				break;
 			case '>':
 				tree->Print();

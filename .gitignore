@@ -27,5 +27,7 @@
 *.exe
 *.out
 *.app
+
+*.dat
 da-lab2
 out.txt

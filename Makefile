@@ -9,8 +9,6 @@ start: btree.o main.o
 main.o: main.cpp
 	$(COMPILLER) -c $(FLAGS) main.cpp
 
-dictionary.o: dictionary.cpp
-	$(COMPILLER) -c $(FLAGS) dictionary.cpp
 
 btree.o: btree.cpp
 	$(COMPILLER) -c $(FLAGS) btree.cpp

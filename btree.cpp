@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include <cstdlib>
 #include "btree.h"
 
@@ -170,6 +171,19 @@ void TBTreeNode::PrintElements() {
 TBTree::TBTree(size_t factor) {
 	this->Root = NULL;
 	this->FactorT = factor;
+
+	//Creating file prefix
+	//this->FilePrefix = {'P', 'a', 's', 'W', 'D', 'd', 'a', '\0'};
+	this->FilePrefix[0] = 'P';
+	this->FilePrefix[1] = 'a';
+	this->FilePrefix[2] = 's';
+	this->FilePrefix[3] = 'W';
+	this->FilePrefix[4] = 'D';
+	this->FilePrefix[5] = 'd';
+	this->FilePrefix[6] = 'a';
+	this->FilePrefix[7] = '\0';
+
+	//this->FilePrefixSize = 8;
 }
 
 TBTree::~TBTree() {
@@ -414,13 +428,21 @@ void TBTree::Balance(TBTreeNode *CurrentNode, size_t pos) {
 	if (CurrentNode == NULL) {
 		return;
 	}
-	if (CurrentNode->ElementsNum >= this->FactorT - 1 || CurrentNode->Parent == NULL) {
-		return;
-	}
-	if (CurrentNode->Parent->ElementsNum == 0 && CurrentNode->Parent->Parent == NULL) {
+	
+	/*if (CurrentNode->Parent->ElementsNum == 0 && CurrentNode->Parent->Parent == NULL) {
 		delete this->Root;
 		this->Root = CurrentNode;
 		this->Root->Parent = NULL;
+		return;
+	}*/
+	if (CurrentNode->ElementsNum == 0 && CurrentNode->Parent == NULL) {
+		CurrentNode = CurrentNode->Children[0];
+		delete this->Root;
+		this->Root = CurrentNode;
+		this->Root->Parent = NULL;
+		return;
+	}
+	if (CurrentNode->ElementsNum >= this->FactorT - 1 || CurrentNode->Parent == NULL) {
 		return;
 	}
 
@@ -495,6 +517,7 @@ void TBTree::RotateLeft(TBTreeNode *CurrentNode) {
 		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
 			new_arr_children[i] = CurrentNode->Children[i];
 		}
+		tmp->Parent = CurrentNode;
 		new_arr_children[CurrentNode->ChildrenNum] = tmp;
 		delete [] CurrentNode->Children;
 		CurrentNode->Children = new_arr_children;
@@ -503,14 +526,16 @@ void TBTree::RotateLeft(TBTreeNode *CurrentNode) {
 }
 
 void TBTree::RotateRight(TBTreeNode *CurrentNode) {
+	CurrentNode->PrintElements();
+	this->Print();
 	size_t pos = 0;
+	CurrentNode->Parent->PrintElements();
 	for (size_t i = 0; i < CurrentNode->Parent->ChildrenNum; i++) {
 		if (CurrentNode == CurrentNode->Parent->Children[i]) {
 			pos = i;
 			break;
 		}
 	}
-
 	size_t left_last = CurrentNode->Parent->Children[pos - 1]->ElementsNum - 1;
 	TNote k1 = CurrentNode->Parent->Children[pos - 1]->Elements[left_last];
 	TNote k2 = CurrentNode->Parent->Elements[pos - 1];
@@ -543,6 +568,7 @@ void TBTree::RotateRight(TBTreeNode *CurrentNode) {
 		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
 			new_arr_children[i + 1] = CurrentNode->Children[i];
 		}
+		tmp->Parent = CurrentNode;
 		new_arr_children[0] = tmp;
 		delete [] CurrentNode->Children;
 		CurrentNode->Children = new_arr_children;
@@ -638,17 +664,19 @@ TNote TBTree::Pop(char *key) {
 	TNote res;
 	res.Num = 0;
 	res.Key[0] = '\0';
+	//cout << "Searching..." << endl;
 	TSearchRes search_res = this->Search(key);
+	//cout << "OK" << endl;
 	if (!search_res.IsFound) {
 		cout << "NoSuchWord" << endl;
 		return res;
 	}
-
+	//cout << "Pop::In" << endl;
 	TBTreeNode *CurrentNode = search_res.Node;
 	size_t pos = search_res.Pos;
 
 	res = CurrentNode->Elements[pos];
-
+	//cout << "Pop::Point1" << endl;
 	while (!CurrentNode->IsLeaf) {
 		TBTreeNode *left = CurrentNode->Children[pos];
 		TBTreeNode *right = CurrentNode->Children[pos + 1];
@@ -664,13 +692,13 @@ TNote TBTree::Pop(char *key) {
 			is_right_larger = true;
 		}
 
-
 		if (!is_left_larger && !is_right_larger) {
 			this->Unite(CurrentNode, pos);
 			CurrentNode = left;
 			pos = CurrentNode->ElementsNum / 2;
 			continue;
 		}
+
 		if (is_left_larger) {
 			this->RotateRight(right);
 			CurrentNode = right;
@@ -682,23 +710,31 @@ TNote TBTree::Pop(char *key) {
 
 		}
 	}
+	//cout << "Pop::Point2" << endl;
 
 	if (CurrentNode == this->Root && CurrentNode->ElementsNum == 1) {
-		delete [] this->Root->Elements;
-		this->Root->ElementsNum = 0;
+		//delete [] this->Root->Elements;
+		//this->Root->ElementsNum = 0;
+		TreeDestroy(this->Root);
+		this->Root = NULL;
 		cout << "OK" << endl;
 		return res;
 	}
-
+	//cout << "Pop::Point3" << endl;
+	
 	CurrentNode->DeleteElementFromLeaf(pos);
-
+	//cout << "Pop::Point4" << endl;
+	
 	size_t parent_pos = 0;
-	for (size_t i = 0; i < CurrentNode->Parent->ChildrenNum; i++) {
-		if (CurrentNode == CurrentNode->Parent->Children[i]) {
-			parent_pos = i;
-			break;
+	if (CurrentNode->Parent != NULL) {
+		for (size_t i = 0; i < CurrentNode->Parent->ChildrenNum; i++) {
+			if (CurrentNode == CurrentNode->Parent->Children[i]) {
+				parent_pos = i;
+				break;
+			}
 		}
 	}
+	//cout << "Pop::Point5" << endl;
 
 	this->Balance(CurrentNode, parent_pos);
 
@@ -714,4 +750,93 @@ void TBTree::Print() {
 		cout << "Tree is empty" << endl;
 	}
 	//cout << "Finish printing" << endl;
+}
+
+
+//FILES
+
+bool TBTree::Save(char *path) {
+	FILE *out = fopen(path, "wb");
+	if (out == NULL) {
+		cout << "ERROR: Couldn't create file" << endl;
+		return false;
+	}
+
+	//Writing prefix
+	fwrite(this->FilePrefix, sizeof(char), FILE_PREFIX_SIZE, out);
+	this->Root->Save(out);
+	fclose(out);
+	cout << "OK" << endl;
+	return true;
+}
+bool TBTree::Load(char *path) {
+	FILE *in = fopen(path, "rb");
+
+	if (in == NULL) {
+		cout << "ERROR: Couldn't open file" << endl;
+		return false;
+	}
+
+	char out_prefix[FILE_PREFIX_SIZE];
+
+	fread(out_prefix, sizeof(char), FILE_PREFIX_SIZE, in);
+
+	if (StringComparison(this->FilePrefix, out_prefix) != 0) {
+		cout << this->FilePrefix << " != " << out_prefix << endl;
+		cout << "ERROR: Incorrect file" << endl;
+		return false;
+	}
+
+	if (this->Root != NULL) {
+		this->TreeDestroy(this->Root);
+	}
+	this->Root = NULL;
+
+	//TBTreeNode *this_node = NULL;
+	//TBTreeNode *prev_node = NULL;
+
+	/*while (!feof(in)) {
+		this_node = new TBTreeNode();
+	}*/
+	this->Root = this->LoadNodes(in, NULL);
+	fclose(in);
+
+	cout << "OK" << endl;
+	return true;
+}
+
+void TBTreeNode::Save(FILE *out) {
+	char is_leaf = (char) this->IsLeaf;
+	fwrite(&is_leaf, 1, 1, out);
+	fwrite(&this->ElementsNum, sizeof(size_t), 1, out);
+	for (size_t i = 0; i < this->ElementsNum; i++) {
+		fwrite(this->Elements[i].Key, sizeof(char), KEY_STR_LEN, out);
+		fwrite(&this->Elements[i].Num, sizeof(TNumber), 1, out);
+	}
+	for (size_t i = 0; i < this->ChildrenNum; i++) {
+		this->Children[i]->Save(out);
+	}
+}
+TBTreeNode *TBTree::LoadNodes(FILE *in, TBTreeNode *parent) {
+	if (feof(in)) {
+		return NULL;
+	}
+	char is_leaf;
+	fread(&is_leaf, 1, 1, in);
+	TBTreeNode *node = new TBTreeNode(parent, (bool) is_leaf);
+
+	fread(&node->ElementsNum, sizeof(size_t), 1, in);
+	node->Elements = new TNote[node->ElementsNum];
+	for (size_t i = 0; i < node->ElementsNum; i++) {
+		fread(node->Elements[i].Key, sizeof(char), KEY_STR_LEN, in);
+		fread(&node->Elements[i].Num, sizeof(TNumber), 1, in);
+	}
+	if (!node->IsLeaf) {
+		node->ChildrenNum = node->ElementsNum + 1;
+		node->Children = new TBTreeNode *[node->ChildrenNum];
+		for (size_t i = 0; i < node->ChildrenNum; i++) {
+			node->Children[i] = this->LoadNodes(in, node);
+		}
+	}
+	return node;
 }
