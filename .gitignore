@@ -31,3 +31,4 @@
 *.dat
 da-lab2
 out.txt
+!/lib/*
