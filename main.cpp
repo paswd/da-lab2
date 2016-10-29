@@ -1,12 +1,13 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <string.h>
 #include "btree.h"
 
 using namespace std;
 
 int main() {
-	const size_t factor_t = 3;
+	const size_t factor_t = 20;
 	TBTree *tree = new TBTree(factor_t);
 	char in[8];
 
@@ -19,9 +20,9 @@ int main() {
 		bool out_log = false;
 
 		TNote in_note;
-		char str[257];
+		char *str;
 		TSearchRes search_res;
-		char file_path[512];
+		char *file_path;
 
 		char save[] = "Save";
 		char load[] = "Load";

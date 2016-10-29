@@ -5,7 +5,7 @@
 
 typedef unsigned long long TNumber;
 const size_t FILE_PREFIX_SIZE = 8;
-const size_t KEY_STR_LEN = 259;
+const size_t KEY_STR_LEN = 257;
 
 //Universal functions block
 TNumber min(TNumber num1, TNumber num2);
@@ -16,7 +16,7 @@ char ToLowerCase(char letter);
 //Content blocks
 class TNote {
 public:
-	char Key[KEY_STR_LEN];
+	char *Key;
 	TNumber Num;
 
 	TNote();

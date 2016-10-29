@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <string.h>
 #include "btree.h"
 
 using namespace std;
@@ -70,15 +71,19 @@ TBTreeNode::TBTreeNode(TBTreeNode *parent, bool is_leaf) {
 }
 
 TBTreeNode::~TBTreeNode() {
-	delete [] this->Elements;
-	delete [] this->Children;
+	/*delete [] this->Elements;
+	delete [] this->Children;*/
+	free(this->Elements);
+	free(this->Children);
 }
 
 void TBTreeNode::InsertElementToLeaf(TNote element) {
+	//cout << "Insert::In" << endl;
 	if (!this->IsLeaf) {
 		cout << "Node is not a leaf" << endl;
 		return;
 	}
+	//cout << "Insert::Point1" << endl;
 
 	//Binnary search
 	size_t left = 0;
@@ -86,6 +91,7 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 	if (this->ElementsNum == 0) {
 		right = 0;
 	}
+	//cout << "Insert::Point2" << endl;
 	while (right > left) {
 		size_t tmp_size = right - left + 1;
 		size_t middle = tmp_size / 2 + left;
@@ -95,6 +101,7 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 			left = middle;
 		}
 	}
+	//cout << "Insert::Point3" << endl;
 
 	//Insert element
 	size_t insert_pos = left;
@@ -104,8 +111,9 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 			insert_pos++;
 		}
 	}
+	//cout << "Insert::Point4" << endl;
 
-	TNote *new_elements = new TNote[this->ElementsNum + 1];
+	/*TNote *new_elements = new TNote[this->ElementsNum + 1];
 	size_t pos = 0;
 	for (size_t i = 0; i < this->ElementsNum; i++) {
 		if (i == insert_pos) {
@@ -116,12 +124,19 @@ void TBTreeNode::InsertElementToLeaf(TNote element) {
 	}
 	new_elements[insert_pos] = element;
 	delete [] this->Elements;
-	this->Elements = new_elements;
+	this->Elements = new_elements;*/
 	this->ElementsNum++;
+	this->Elements = (TNote *) realloc(this->Elements, this->ElementsNum * sizeof(TNote));
+	for (size_t i = this->ElementsNum - 1; i > insert_pos; i--) {
+		this->Elements[i] = this->Elements[i - 1];
+	}
+	this->Elements[insert_pos] = element;
+	//cout << "Insert::Out" << endl;
+	//this->ElementsNum++;
 }
 
 void TBTreeNode::DeleteElementFromLeaf(size_t pos) {
-	size_t new_arr_len = this->ElementsNum - 1;
+	/*size_t new_arr_len = this->ElementsNum - 1;
 	TNote *new_arr = new TNote[new_arr_len];
 	size_t tmp_pos = 0;
 	for (size_t i = 0; i < new_arr_len; i++) {
@@ -133,7 +148,12 @@ void TBTreeNode::DeleteElementFromLeaf(size_t pos) {
 	}
 	delete [] this->Elements;
 	this->Elements = new_arr;
-	this->ElementsNum = new_arr_len;
+	this->ElementsNum = new_arr_len;*/
+	this->ElementsNum--;
+	for (size_t i = pos; i < this->ElementsNum; i++) {
+		this->Elements[i] = this->Elements[i + 1];
+	}
+	this->Elements = (TNote *) realloc(this->Elements, this->ElementsNum * sizeof(TNote));
 }
 
 size_t TBTreeNode::GetInsertPosition(TBTreeNode *child) {
@@ -151,6 +171,7 @@ void TBTreeNode::Print(size_t lvl) {
 			cout << "  ";
 		}
 		cout << this->Elements[i].Key << ":" << this->Elements[i].Num << endl;
+		//cout << "::" << this->ChildrenNum <<endl;
 	}
 	cout << "----------" << endl;
 	for (size_t i = 0; i < this->ChildrenNum; i++) {
@@ -207,8 +228,13 @@ size_t TBTree::Split(TBTreeNode *node) {
 	size_t arr1_elements_len = middle;
 	size_t arr2_elements_len = node->ElementsNum - middle - 1;
 
-	TNote *arr1_elements = new TNote[arr1_elements_len];
-	TNote *arr2_elements = new TNote[arr2_elements_len];
+	//TNote *arr1_elements = new TNote[arr1_elements_len];
+	//TNote *arr2_elements = new TNote[arr2_elements_len];
+	TNote *arr2_elements = (TNote *) calloc(arr2_elements_len, sizeof(TNote));
+	for (size_t i = middle + 1; i < node->ElementsNum; i++) {
+		arr2_elements[i - middle - 1] = node->Elements[i];
+	}
+	TNote *arr1_elements = (TNote *) realloc(node->Elements, arr1_elements_len * sizeof(TNote));
 	size_t arr1_children_len = 0;
 	size_t arr2_children_len = 0;
 
@@ -218,11 +244,17 @@ size_t TBTree::Split(TBTreeNode *node) {
 		arr1_children_len = arr1_elements_len + 1;
 		arr2_children_len = arr2_elements_len + 1;
 
-		arr1_children = new TBTreeNode *[arr1_children_len];
-		arr2_children = new TBTreeNode *[arr2_children_len];
+		arr2_children = (TBTreeNode **) calloc(arr2_children_len, sizeof(TBTreeNode *));
+		for (size_t i = middle + 1; i < node->ChildrenNum; i++) {
+			arr2_children[i - middle - 1] = node->Children[i];
+		}
+		arr1_children = (TBTreeNode **) realloc(node->Children, arr1_children_len * sizeof(TBTreeNode *));
+
+		//arr1_children = new TBTreeNode *[arr1_children_len];
+		//arr2_children = new TBTreeNode *[arr2_children_len];
 	}
 
-	for (size_t i = 0; i < node->ElementsNum; i++) {
+	/*for (size_t i = 0; i < node->ElementsNum; i++) {
 		if (i == middle) {
 			continue;
 		}
@@ -231,8 +263,8 @@ size_t TBTree::Split(TBTreeNode *node) {
 		} else {
 			arr2_elements[i - middle - 1] = node->Elements[i];
 		}
-	}
-	if (!node->IsLeaf) {
+	}*/
+	/*if (!node->IsLeaf) {
 		for (size_t i = 0; i < node->ChildrenNum; i++) {
 			if (i <= middle) {
 				arr1_children[i] = node->Children[i];
@@ -240,12 +272,13 @@ size_t TBTree::Split(TBTreeNode *node) {
 				arr2_children[i - middle - 1] = node->Children[i];
 			}
 		}
-	}
+	}*/
 
 	if (node->Parent == NULL) {
 		node->Parent = new TBTreeNode(NULL, false);
 		node->Parent->ChildrenNum = 1;
-		node->Parent->Children = new TBTreeNode *[node->Parent->ChildrenNum];
+		//node->Parent->Children = new TBTreeNode *[node->Parent->ChildrenNum];
+		node->Parent->Children = (TBTreeNode **) calloc(node->Parent->ChildrenNum, sizeof(TBTreeNode *));
 		node->Parent->Children[node->Parent->ChildrenNum - 1] = node;
 		this->Root = node->Parent;
 	}
@@ -258,7 +291,7 @@ size_t TBTree::Split(TBTreeNode *node) {
 	size_t insert_pos_children = insert_pos_element + 1;
 
 	//Space
-	TNote *parent_elements_new = new TNote[node->Parent->ElementsNum + 1];
+	/*TNote *parent_elements_new = new TNote[node->Parent->ElementsNum + 1];
 	size_t pos = 0;
 	for (size_t i = 0; i < node->Parent->ElementsNum; i++) {
 		if (pos == insert_pos_element) {
@@ -269,9 +302,18 @@ size_t TBTree::Split(TBTreeNode *node) {
 	}
 	node->Parent->ElementsNum++;
 	delete [] node->Parent->Elements;
-	node->Parent->Elements = parent_elements_new;
+	node->Parent->Elements = parent_elements_new;*/
+	//cout << "El1::";
+	//node->Parent->PrintElements();
+	node->Parent->ElementsNum++;
+	node->Parent->Elements = (TNote *) realloc(node->Parent->Elements, node->Parent->ElementsNum * sizeof(TNote));
+	for (size_t i = node->Parent->ElementsNum - 1; i > insert_pos_element; i--) {
+		node->Parent->Elements[i] = node->Parent->Elements[i - 1];
+	}
+	//cout << "El2::";
+	//node->Parent->PrintElements();
 
-	TBTreeNode **parent_children_new = new TBTreeNode *[node->Parent->ChildrenNum + 1];
+	/*TBTreeNode **parent_children_new = new TBTreeNode *[node->Parent->ChildrenNum + 1];
 	pos = 0;
 	for (size_t i = 0; i < node->Parent->ChildrenNum; i++) {
 		if (pos == insert_pos_children) {
@@ -282,9 +324,15 @@ size_t TBTree::Split(TBTreeNode *node) {
 	}
 	node->Parent->ChildrenNum++;
 	delete [] node->Parent->Children;
-	node->Parent->Children = parent_children_new;
+	node->Parent->Children = parent_children_new;*/
+	node->Parent->ChildrenNum++;
+	node->Parent->Children = (TBTreeNode **) realloc(node->Parent->Children, node->Parent->ChildrenNum * sizeof(TBTreeNode *));
+	for (size_t i = node->Parent->ChildrenNum - 1; i > insert_pos_element; i--) {
+		node->Parent->Children[i] = node->Parent->Children[i - 1];
+	}
 
-	
+	//cout << "El3::";
+	//node->Parent->PrintElements();
 	//Inserting
 	node->Parent->Elements[insert_pos_element] = middle_element;
 
@@ -293,6 +341,8 @@ size_t TBTree::Split(TBTreeNode *node) {
 
 	node->Parent->Children[insert_pos_children]->Elements = arr2_elements;
 	node->Parent->Children[insert_pos_children]->ElementsNum = arr2_elements_len;
+	//cout << "El4::";
+	//node->Parent->PrintElements();
 	if (!node->IsLeaf) {
 		TBTreeNode *ths_tmp = node->Parent->Children[insert_pos_children];
 		ths_tmp->Children = arr2_children;
@@ -302,12 +352,12 @@ size_t TBTree::Split(TBTreeNode *node) {
 		}
 	}
 
-	delete [] node->Elements;
+	//delete [] node->Elements;
 	node->Elements = arr1_elements;
 	node->ElementsNum = arr1_elements_len;
 
 	if (!node->IsLeaf) {
-		delete [] node->Children;
+		//delete [] node->Children;
 		node->Children = arr1_children;
 		node->ChildrenNum = arr1_children_len;
 	}
@@ -324,15 +374,19 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 		cout << "Unite error: Unable position" << endl;
 		return;
 	}
-
-	node->Children[pos]->PrintElements();
-	node->Children[pos + 1]->PrintElements();
-
+	//cout << "Unite::In" << endl;
+	//node->Children[pos]->PrintElements();
+	//node->Children[pos + 1]->PrintElements();
+	//cout << "<<PARENT>>" << endl;
+	//node->PrintElements();
+	//node->Children[pos]->Parent->PrintElements();
+	//node->Children[pos + 1]->Parent->PrintElements();
+	//cout << "Unite::Point1" << endl;
 	//Creating united arrays
 	size_t new_arr_elements_len = 1;
 	new_arr_elements_len += node->Children[pos]->ElementsNum;
 	new_arr_elements_len += node->Children[pos + 1]->ElementsNum;
-	TNote *new_arr_elements = new TNote[new_arr_elements_len];
+	/*TNote *new_arr_elements = new TNote[new_arr_elements_len];
 
 	for (size_t i = 0; i < new_arr_elements_len; i++) {
 		if (i < node->Children[pos]->ElementsNum) {
@@ -345,43 +399,59 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 			continue;
 		}
 		new_arr_elements[i] = node->Elements[pos];
+	}*/
+	//cout << "Unite::Point2" << endl;
+	TNote *new_arr_elements = (TNote *) realloc(node->Children[pos]->Elements, new_arr_elements_len * sizeof(TNote));
+	new_arr_elements[node->Children[pos]->ElementsNum] = node->Elements[pos];
+	for (size_t i = node->Children[pos]->ElementsNum + 1; i < new_arr_elements_len; i++) {
+		size_t tmp_pos = i - node->Children[pos]->ElementsNum - 1;
+		new_arr_elements[i] = node->Children[pos + 1]->Elements[tmp_pos];
 	}
-
+	//this->Print();
+	//cout << "Unite::Point3" << endl;
 	size_t new_arr_children_len = 0;
 	TBTreeNode **new_arr_children = NULL;
 	if (!node->Children[pos]->IsLeaf) {
 		new_arr_children_len = node->Children[pos]->ChildrenNum;
 		new_arr_children_len += node->Children[pos + 1]->ChildrenNum;
-		new_arr_children = new TBTreeNode *[new_arr_children_len];
-		for (size_t i = 0; i < new_arr_children_len; i++) {
+		//new_arr_children = new TBTreeNode *[new_arr_children_len];
+		new_arr_children = (TBTreeNode **) realloc(node->Children[pos]->Children, new_arr_children_len * sizeof(TBTreeNode *));
+		/*for (size_t i = 0; i < new_arr_children_len; i++) {
 			if (i < node->Children[pos]->ChildrenNum) {
 				new_arr_children[i] = node->Children[pos]->Children[i];
 			} else {
 				size_t tmp_pos = node->Children[pos]->ChildrenNum;
 				new_arr_children[i] = node->Children[pos + 1]->Children[i - tmp_pos];
 			}
+		}*/
+		for (size_t i = node->Children[pos]->ChildrenNum; i < new_arr_children_len; i++) {
+			size_t tmp_pos = i - node->Children[pos]->ChildrenNum;
+			new_arr_children[i] = node->Children[pos + 1]->Children[tmp_pos];
 		}
 	}
+	//this->Print();
+	//cout << "Unite::Point4" << endl;
 
 	//Deleting second branch and creating united child in first branch
 	delete node->Children[pos + 1];
-	delete [] node->Children[pos]->Elements;
-	if (!node->Children[pos]->IsLeaf) {
+	//delete [] node->Children[pos]->Elements;
+	/*if (!node->Children[pos]->IsLeaf) {
 		delete [] node->Children[pos]->Children;
-	}
+	}*/
 
 	node->Children[pos]->Elements = new_arr_elements;
 	node->Children[pos]->ElementsNum = new_arr_elements_len;
 	node->Children[pos]->Children = new_arr_children;
 	node->Children[pos]->ChildrenNum = new_arr_children_len;
-
+	//cout << "Unite::Point5" << endl;
 	//Creating new parent arrays
 	size_t new_parent_arr_elements_len = node->ElementsNum - 1;
 	size_t new_parent_arr_children_len = node->ChildrenNum - 1;
-	TNote *new_parent_arr_elements = new TNote[new_parent_arr_elements_len];
-	TBTreeNode **new_parent_arr_children = new TBTreeNode *[new_parent_arr_children_len];
+	//TNote *new_parent_arr_elements = new TNote[new_parent_arr_elements_len];
+	//TBTreeNode **new_parent_arr_children = new TBTreeNode *[new_parent_arr_children_len];
+	
 
-	size_t tmp_pos = 0;
+	/*size_t tmp_pos = 0;
 	for (size_t i = 0; i < new_parent_arr_elements_len; i++) {
 		if (tmp_pos == pos) {
 			tmp_pos++;
@@ -397,21 +467,38 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 		}
 		new_parent_arr_children[i] = node->Children[tmp_pos];
 		tmp_pos++;
+	}*/
+	//this->Print();
+	//cout << "Unite::Point6" << endl;
+
+	for (size_t i = pos + 1; i < node->ElementsNum; i++) {
+		node->Elements[i - 1] = node->Elements[i];
 	}
+	for (size_t i = pos + 2; i < node->ChildrenNum; i++) {
+		node->Children[i - 1] = node->Children[i];
+	}
+	//cout << "Unite::Point7" << endl;
+
+	node->Elements = (TNote *) realloc(node->Elements, new_parent_arr_elements_len * sizeof(TNote));
+	node->Children = (TBTreeNode **) realloc(node->Children, new_parent_arr_children_len * sizeof(TBTreeNode *));
 
 	//Refreshing arrays
-	delete [] node->Elements;
-	delete [] node->Children;
-	node->Elements = new_parent_arr_elements;
+	//delete [] node->Elements;
+	//delete [] node->Children;
+	//node->Elements = new_parent_arr_elements;
 	node->ElementsNum = new_parent_arr_elements_len;
-	node->Children = new_parent_arr_children;
+	//node->Children = new_parent_arr_children;
 	node->ChildrenNum = new_parent_arr_children_len;
-
+	//this->Print();
+	//cout << "Unite::Point7.9" << endl;
 	for (size_t i = 0; i < node->Children[pos]->ChildrenNum; i++) {
+		//cout << "UniteDbg::POINT" << endl;
+
 		node->Children[pos]->Children[i]->Parent = node->Children[pos];
 	}
+	//cout << "Unite::Point8" << endl;
 
-	tmp_pos = 0;
+	size_t tmp_pos = 0;
 	if (node->Parent != NULL) {
 		for (size_t i = 0; i < node->Parent->ChildrenNum; i++) {
 			if (node == node->Parent->Children[i]) {
@@ -420,6 +507,9 @@ void TBTree::Unite(TBTreeNode *node, size_t pos) {
 			}
 		}
 	}
+	//cout << "Unite::Out" << endl;
+
+	//this->Print();
 
 	this->Balance(node, tmp_pos);
 }
@@ -492,88 +582,117 @@ void TBTree::RotateLeft(TBTreeNode *CurrentNode) {
 	CurrentNode->Parent->Children[pos + 1]->DeleteElementFromLeaf(right_first);
 	CurrentNode->Parent->Elements[pos] = k1;
 
-	TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
+	/*TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
 	for (size_t i = 0; i < CurrentNode->ElementsNum; i++) {
 		new_arr_elements[i] = CurrentNode->Elements[i];
 	}
 	new_arr_elements[CurrentNode->ElementsNum] = k2;
 	delete [] CurrentNode->Elements;
 	CurrentNode->Elements = new_arr_elements;
+	CurrentNode->ElementsNum++;*/
 	CurrentNode->ElementsNum++;
+	CurrentNode->Elements = (TNote *) realloc(CurrentNode->Elements, CurrentNode->ElementsNum * sizeof(TNote));
+	CurrentNode->Elements[CurrentNode->ElementsNum - 1] = k2;
 
 	if (!CurrentNode->IsLeaf) {
 		TBTreeNode *t_right = CurrentNode->Parent->Children[pos + 1];
 		TBTreeNode *tmp = t_right->Children[right_first];
-		TBTreeNode **new_arr_children = new TBTreeNode *[t_right->ChildrenNum - 1];
+		/*TBTreeNode **new_arr_children = new TBTreeNode *[t_right->ChildrenNum - 1];
 
 		for (size_t i = 1; i < t_right->ChildrenNum; i++) {
 			new_arr_children[i - 1] = t_right->Children[i];
 		}
 		delete [] t_right->Children;
 		t_right->Children = new_arr_children;
+		t_right->ChildrenNum--;*/
+		for (size_t i = 1; i < t_right->ChildrenNum; i++) {
+			t_right->Children[i - 1] = t_right->Children[i];
+		}
 		t_right->ChildrenNum--;
+		t_right->Children = (TBTreeNode **) realloc(t_right->Children, t_right->ChildrenNum * sizeof(TBTreeNode *));
 
-		new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
+		/*new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
 		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
 			new_arr_children[i] = CurrentNode->Children[i];
-		}
+		}*/
 		tmp->Parent = CurrentNode;
-		new_arr_children[CurrentNode->ChildrenNum] = tmp;
-		delete [] CurrentNode->Children;
+		//CurrentNode->Children[CurrentNode->ChildrenNum] = tmp;
+		/*delete [] CurrentNode->Children;
 		CurrentNode->Children = new_arr_children;
+		CurrentNode->ChildrenNum++;*/
 		CurrentNode->ChildrenNum++;
+		CurrentNode->Children = (TBTreeNode **) realloc(CurrentNode->Children, CurrentNode->ChildrenNum * sizeof(TBTreeNode *));
+		CurrentNode->Children[CurrentNode->ChildrenNum - 1] = tmp;
 	}
 }
 
 void TBTree::RotateRight(TBTreeNode *CurrentNode) {
-	CurrentNode->PrintElements();
-	this->Print();
+	//CurrentNode->PrintElements();
+	//CurrentNode->Parent->PrintElements();
+	//this->Print();
 	size_t pos = 0;
-	CurrentNode->Parent->PrintElements();
 	for (size_t i = 0; i < CurrentNode->Parent->ChildrenNum; i++) {
 		if (CurrentNode == CurrentNode->Parent->Children[i]) {
 			pos = i;
 			break;
 		}
 	}
+	//cout << "Rotate::Point1" << endl;
 	size_t left_last = CurrentNode->Parent->Children[pos - 1]->ElementsNum - 1;
 	TNote k1 = CurrentNode->Parent->Children[pos - 1]->Elements[left_last];
 	TNote k2 = CurrentNode->Parent->Elements[pos - 1];
 	CurrentNode->Parent->Children[pos - 1]->DeleteElementFromLeaf(left_last);
 	CurrentNode->Parent->Elements[pos - 1] = k1;
-
-	TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
-	//
+	//cout << "Rotate::Point2" << endl;
+	/*TNote *new_arr_elements = new TNote[CurrentNode->ElementsNum + 1];
+	
 	for (size_t i = 0; i < CurrentNode->ElementsNum; i++) {
 		new_arr_elements[i + 1] = CurrentNode->Elements[i];
 	}
 	new_arr_elements[0] = k2;
 	delete [] CurrentNode->Elements;
 	CurrentNode->Elements = new_arr_elements;
+	CurrentNode->ElementsNum++;*/
 	CurrentNode->ElementsNum++;
+	CurrentNode->Elements = (TNote *) realloc(CurrentNode->Elements, CurrentNode->ElementsNum * sizeof(TNote));
+	for (size_t i = CurrentNode->ElementsNum - 1; i > 0; i--) {
+		CurrentNode->Elements[i] = CurrentNode->Elements[i - 1];
+	}
+	CurrentNode->Elements[0] = k2;
+	//cout << "Rotate::Point3" << endl;
 
 	if (!CurrentNode->IsLeaf) {
 		TBTreeNode *t_left = CurrentNode->Parent->Children[pos - 1];
 		TBTreeNode *tmp = t_left->Children[left_last + 1];
-		TBTreeNode **new_arr_children = new TBTreeNode *[t_left->ChildrenNum - 1];
+		/*TBTreeNode **new_arr_children = new TBTreeNode *[t_left->ChildrenNum - 1];
 
 		for (size_t i = 0; i < t_left->ChildrenNum - 1; i++) {
 			new_arr_children[i] = t_left->Children[i];
 		}
 		delete [] t_left->Children;
 		t_left->Children = new_arr_children;
+		t_left->ChildrenNum--;*/
 		t_left->ChildrenNum--;
+		t_left->Children = (TBTreeNode **) realloc(t_left->Children, t_left->ChildrenNum * sizeof(TBTreeNode *));
 
-		new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
+		/*new_arr_children = new TBTreeNode *[CurrentNode->ChildrenNum + 1];
 		for (size_t i = 0; i < CurrentNode->ChildrenNum; i++) {
 			new_arr_children[i + 1] = CurrentNode->Children[i];
-		}
+		}*/
 		tmp->Parent = CurrentNode;
-		new_arr_children[0] = tmp;
-		delete [] CurrentNode->Children;
+		//new_arr_children[0] = tmp;
+		/*delete [] CurrentNode->Children;
 		CurrentNode->Children = new_arr_children;
+		CurrentNode->ChildrenNum++;*/
 		CurrentNode->ChildrenNum++;
+		CurrentNode->Children = (TBTreeNode **) realloc(CurrentNode->Children, CurrentNode->ChildrenNum * sizeof(TBTreeNode *));
+		for (size_t i = CurrentNode->ChildrenNum - 1; i > 0; i--) {
+			CurrentNode->Children[i] = CurrentNode->Children[i - 1];
+		}
+		CurrentNode->Children[0] = tmp;
 	}
+	//this->Print();
+	//cout << "Rotate::Out" << endl;
 }
 
 TSearchRes TBTree::Search(char *key) {
@@ -782,7 +901,7 @@ bool TBTree::Load(char *path) {
 	fread(out_prefix, sizeof(char), FILE_PREFIX_SIZE, in);
 
 	if (StringComparison(this->FilePrefix, out_prefix) != 0) {
-		cout << this->FilePrefix << " != " << out_prefix << endl;
+		//cout << this->FilePrefix << " != " << out_prefix << endl;
 		cout << "ERROR: Incorrect file" << endl;
 		return false;
 	}
@@ -810,7 +929,13 @@ void TBTreeNode::Save(FILE *out) {
 	fwrite(&is_leaf, 1, 1, out);
 	fwrite(&this->ElementsNum, sizeof(size_t), 1, out);
 	for (size_t i = 0; i < this->ElementsNum; i++) {
-		fwrite(this->Elements[i].Key, sizeof(char), KEY_STR_LEN, out);
+		char str_tmp[KEY_STR_LEN];
+		size_t j;
+		for (j = 0; this->Elements[i].Key[j] != '\0'; j++) {
+			str_tmp[j] = this->Elements[i].Key[j];
+		}
+		str_tmp[j] = '\0';
+		fwrite(str_tmp, sizeof(char), KEY_STR_LEN, out);
 		fwrite(&this->Elements[i].Num, sizeof(TNumber), 1, out);
 	}
 	for (size_t i = 0; i < this->ChildrenNum; i++) {
@@ -826,14 +951,18 @@ TBTreeNode *TBTree::LoadNodes(FILE *in, TBTreeNode *parent) {
 	TBTreeNode *node = new TBTreeNode(parent, (bool) is_leaf);
 
 	fread(&node->ElementsNum, sizeof(size_t), 1, in);
-	node->Elements = new TNote[node->ElementsNum];
+	//node->Elements = new TNote[node->ElementsNum];
+	node->Elements = (TNote *) calloc(node->ElementsNum, sizeof(TNote));
 	for (size_t i = 0; i < node->ElementsNum; i++) {
-		fread(node->Elements[i].Key, sizeof(char), KEY_STR_LEN, in);
+		char str_tmp[KEY_STR_LEN];
+		fread(str_tmp, sizeof(char), KEY_STR_LEN, in);
 		fread(&node->Elements[i].Num, sizeof(TNumber), 1, in);
+		node->Elements[i].Key = str_tmp;
 	}
 	if (!node->IsLeaf) {
 		node->ChildrenNum = node->ElementsNum + 1;
-		node->Children = new TBTreeNode *[node->ChildrenNum];
+		//node->Children = new TBTreeNode *[node->ChildrenNum];
+		node->Children = (TBTreeNode **) calloc(node->ChildrenNum, sizeof(TBTreeNode *));
 		for (size_t i = 0; i < node->ChildrenNum; i++) {
 			node->Children[i] = this->LoadNodes(in, node);
 		}
