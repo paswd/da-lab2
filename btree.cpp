@@ -29,6 +29,7 @@ char ToLowerCase(char letter) {
 }
 
 int StringComparison(char *str1, char *str2) {
+	//cout << str1 << endl << str2 << endl;
 	for (size_t i = 0; true; i++) {
 		if (str1[i] == '\0' && str2[i] != '\0') {
 			return -1;
@@ -52,7 +53,7 @@ int StringComparison(char *str1, char *str2) {
 
 
 TNote::TNote() {
-	this->Key[0] = '\0';
+	//this->Key[0] = '\0';
 	this->Num = 0;
 }
 
@@ -215,6 +216,9 @@ TBTree::~TBTree() {
 
 void TBTree::TreeDestroy(TBTreeNode *node) {
 	for (size_t i = 0; i < node->ChildrenNum; i++) {
+		if (i != node->ChildrenNum - 1) {
+			delete [] node->Elements[i].Key;
+		}
 		this->TreeDestroy(node->Children[i]);
 	}
 	delete node;
@@ -695,7 +699,7 @@ void TBTree::RotateRight(TBTreeNode *CurrentNode) {
 	//cout << "Rotate::Out" << endl;
 }
 
-TSearchRes TBTree::Search(char *key) {
+/*TSearchRes TBTree::Search(char *key) {
 	TSearchRes result;
 	TBTreeNode *node = this->Root;
 	result.Node = node;
@@ -707,20 +711,6 @@ TSearchRes TBTree::Search(char *key) {
 		bool is_leaf = node->IsLeaf;
 		for (size_t i = 0; i < node->ElementsNum; i++) {
 			int cmp = StringComparison(key, node->Elements[i].Key);
-			/*cout << "SearchLog:: ";
-			cout << key;
-			switch (cmp) {
-				case -1:
-					cout << " < ";
-					break;
-				case 0:
-					cout << " = ";
-					break;
-				case 1:
-					cout << " > ";
-					break;
-			}
-			cout << node->Elements[i].Key << endl;*/
 			if (cmp == 0) {
 				result.Pos = i;
 				result.IsFound = true;
@@ -750,6 +740,66 @@ TSearchRes TBTree::Search(char *key) {
 	}
 	result.IsFound = false;
 	return result;
+}*/
+
+TSearchRes TBTree::Search(char *key) {
+	TSearchRes res;
+	TBTreeNode *node = this->Root;
+	res.Node = node;
+	res.Pos = 0;
+	res.IsFound = false;
+	//cout << "Search::In" << endl;
+
+	while (node != NULL) {
+
+		//Binnary search
+		size_t left = 0;
+		size_t right = node->ElementsNum - 1;
+		if (node->ElementsNum == 0) {
+			right = 0;
+		}
+		while (right > left) {
+			size_t tmp_size = right - left + 1;
+			size_t middle = tmp_size / 2 + left;
+			int cmp = StringComparison(key, node->Elements[middle].Key);
+			if (cmp == 0) {
+				res.Element = node->Elements[middle];
+				res.Pos = middle;
+				res.IsFound = true;
+				res.Node = node;
+				return res;
+			}
+			if (cmp == -1) {
+				right = middle - 1;
+			} else {
+				left = middle;
+			}
+		}
+		int cmp = StringComparison(key, node->Elements[left].Key);
+		if (cmp == 0) {
+			res.Element = node->Elements[left];
+			res.Pos = left;
+			res.IsFound = true;
+			return res;
+		}
+		//cout << "Search::Point4" << endl;
+		if (!node->IsLeaf) {
+			if (cmp < 0) {
+				node = node->Children[left];
+			} else {
+				node = node->Children[left + 1];
+			}
+		} else {
+			res.Node = node;
+			break;
+		}
+		if (node != NULL) {
+			res.Node = node;
+		}
+	}
+	//cout << "Search::Point5" << endl;
+	res.IsFound = false;
+	return res;
 }
 
 void TBTree::Push(TNote element) {
@@ -782,7 +832,7 @@ void TBTree::Push(TNote element) {
 TNote TBTree::Pop(char *key) {
 	TNote res;
 	res.Num = 0;
-	res.Key[0] = '\0';
+	res.Key = NULL;
 	//cout << "Searching..." << endl;
 	TSearchRes search_res = this->Search(key);
 	//cout << "OK" << endl;
@@ -875,15 +925,30 @@ void TBTree::Print() {
 //FILES
 
 bool TBTree::Save(char *path) {
+	//cout << "Save::In" << endl;
 	FILE *out = fopen(path, "wb");
+	//cout << "Save::Point1" << endl;
 	if (out == NULL) {
 		cout << "ERROR: Couldn't create file" << endl;
 		return false;
 	}
+	//cout << "Save::Point2" << endl;
 
 	//Writing prefix
 	fwrite(this->FilePrefix, sizeof(char), FILE_PREFIX_SIZE, out);
+	char is_empty = (char) false;
+	if (this->Root == NULL) {
+		is_empty = (char) true;
+		fwrite(&is_empty, 1, 1, out);
+		fclose(out);
+		cout << "OK" << endl;
+		return true;
+	}
+	fwrite(&is_empty, 1, 1, out);
+	//cout << "Save::Point3" << endl;
 	this->Root->Save(out);
+	//cout << "Save::Point4" << endl;
+	//fwrite('\t', sizeof(char), 1, out);
 	fclose(out);
 	cout << "OK" << endl;
 	return true;
@@ -917,6 +982,14 @@ bool TBTree::Load(char *path) {
 	/*while (!feof(in)) {
 		this_node = new TBTreeNode();
 	}*/
+	char is_empty;
+	fread(&is_empty, 1, 1, in);
+	if ((bool) is_empty) {
+		this->Root = NULL;
+		fclose(in);
+		cout << "OK" << endl;
+		return true;
+	}
 	this->Root = this->LoadNodes(in, NULL);
 	fclose(in);
 
@@ -925,17 +998,19 @@ bool TBTree::Load(char *path) {
 }
 
 void TBTreeNode::Save(FILE *out) {
+	if (out == NULL) {
+		return;
+	}
 	char is_leaf = (char) this->IsLeaf;
 	fwrite(&is_leaf, 1, 1, out);
 	fwrite(&this->ElementsNum, sizeof(size_t), 1, out);
 	for (size_t i = 0; i < this->ElementsNum; i++) {
-		char str_tmp[KEY_STR_LEN];
-		size_t j;
-		for (j = 0; this->Elements[i].Key[j] != '\0'; j++) {
-			str_tmp[j] = this->Elements[i].Key[j];
+		fwrite(&this->Elements[i].KeyLen, sizeof(size_t), 1, out);
+		for (size_t j = 0; j < this->Elements[i].KeyLen; j++) {
+			fwrite(this->Elements[i].Key + j, sizeof(char), 1, out);
 		}
-		str_tmp[j] = '\0';
-		fwrite(str_tmp, sizeof(char), KEY_STR_LEN, out);
+		//str_tmp[j] = '\0';
+		//fwrite(str_tmp, sizeof(char), KEY_STR_LEN, out);
 		fwrite(&this->Elements[i].Num, sizeof(TNumber), 1, out);
 	}
 	for (size_t i = 0; i < this->ChildrenNum; i++) {
@@ -946,19 +1021,30 @@ TBTreeNode *TBTree::LoadNodes(FILE *in, TBTreeNode *parent) {
 	if (feof(in)) {
 		return NULL;
 	}
+	//cout << "Load::In" << endl;
 	char is_leaf;
 	fread(&is_leaf, 1, 1, in);
 	TBTreeNode *node = new TBTreeNode(parent, (bool) is_leaf);
 
 	fread(&node->ElementsNum, sizeof(size_t), 1, in);
 	//node->Elements = new TNote[node->ElementsNum];
+	//cout << "Load::Point1" << endl;
 	node->Elements = (TNote *) calloc(node->ElementsNum, sizeof(TNote));
 	for (size_t i = 0; i < node->ElementsNum; i++) {
-		char str_tmp[KEY_STR_LEN];
-		fread(str_tmp, sizeof(char), KEY_STR_LEN, in);
+		//char str_tmp[KEY_STR_LEN];
+		//fread(str_tmp, sizeof(char), KEY_STR_LEN, in);
+		//cout << "Load::Point2" << endl;
+		fread(&node->Elements[i].KeyLen, sizeof(size_t), 1, in);
+		node->Elements[i].Key = new char[node->Elements[i].KeyLen];
+		for (size_t j = 0; j < node->Elements[i].KeyLen; j++) {
+			fread(node->Elements[i].Key + j, sizeof(char), 1, in);
+		}
+		//cout << "Load::Point3" << endl;
 		fread(&node->Elements[i].Num, sizeof(TNumber), 1, in);
-		node->Elements[i].Key = str_tmp;
+		//cout << "Load::Point4" << endl;
+		//node->Elements[i].Key = str_tmp;
 	}
+	//cout << "Load::Point5" << endl;
 	if (!node->IsLeaf) {
 		node->ChildrenNum = node->ElementsNum + 1;
 		//node->Children = new TBTreeNode *[node->ChildrenNum];
@@ -967,5 +1053,6 @@ TBTreeNode *TBTree::LoadNodes(FILE *in, TBTreeNode *parent) {
 			node->Children[i] = this->LoadNodes(in, node);
 		}
 	}
+	//cout << "Load::Out" << endl;
 	return node;
 }

@@ -1,4 +1,4 @@
-FLAGS=-pedantic -Wall -Werror -Wno-sign-compare -Wno-long-long -lm
+FLAGS=-pedantic -Wall -Werror -Wno-sign-compare -Wno-long-long -lm -std=c++11
 COMPILLER=g++
 
 #all: lib start
@@ -18,7 +18,7 @@ btree.o: btree.cpp
 	$(COMPILLER) -c $(FLAGS) btree.cpp
 
 clear:
-	-rm -f *.o *.gch da-lab2
+	-rm -f *.o *.gch *.dat da-lab2
 	#rm lib/lib-btree.a
 
 lib: btree.o

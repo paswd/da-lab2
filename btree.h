@@ -1,11 +1,13 @@
 #ifndef _BTREE_H_
 #define _BTREE_H_
 
+#include <iostream>
 #include <cstdio>
 
 typedef unsigned long long TNumber;
 const size_t FILE_PREFIX_SIZE = 8;
-const size_t KEY_STR_LEN = 257;
+const size_t KEY_STR_LEN = 258;
+const size_t MAX_FILE_PATH_LEN = 512;
 
 //Universal functions block
 TNumber min(TNumber num1, TNumber num2);
@@ -17,6 +19,7 @@ char ToLowerCase(char letter);
 class TNote {
 public:
 	char *Key;
+	size_t KeyLen;
 	TNumber Num;
 
 	TNote();
